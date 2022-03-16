@@ -1,3 +1,0 @@
-DOCKER_NAMESPACE=jukemir
-DOCKER_TAG=lib
-DOCKER_NAME=jukemir
