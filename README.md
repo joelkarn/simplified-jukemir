@@ -1,4 +1,4 @@
-# Simplified JukeMIR: A step-by-step guide to extract features with Jukebox
+# Simplified JukeMIR: A minimum version for extracting features with Jukebox
 
 This repository contains code is for extracting JukeMIR features in a simplified way on your server.
 
