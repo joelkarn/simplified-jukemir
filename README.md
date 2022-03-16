@@ -52,10 +52,10 @@ JUKEBOX_SAMPLE_RATE = 44100
 T = 8192
 SAMPLE_LENGTH = 1048576 # ~23.77s, which is the param in JukeMIR
 DEVICE='cuda'
-VQVAE_MODELPATH = "/import/c4dm-02/jukemir-model/models/5b/vqvae.pth.tar"
-PRIOR_MODELPATH = "/import/c4dm-02/jukemir-model/models/5b/prior_level_2.pth.tar"
-INPUT_DIR = r"/homes/yz007/BUTTER_v2/westone-dataset/WAV/"
-OUTPUT_DIR = r"/homes/yz007/BUTTER_v2/jukemir/output/"
+VQVAE_MODELPATH = "models/5b/vqvae.pth.tar"
+PRIOR_MODELPATH = "models/5b/prior_level_2.pth.tar"
+INPUT_DIR = r"BUTTER_v2/westone-dataset/WAV/"
+OUTPUT_DIR = r"BUTTER_v2/jukemir/output/"
 os.environ["CUDA_VISIBLE_DEVICES"]="7"
 PRIOR_DEPTH = 36
 ```
