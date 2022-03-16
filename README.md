@@ -2,6 +2,10 @@
 
 This repository contains code is for extracting JukeMIR features in a simplified way on your server.
 
+It generates a (4800, 1) vector for a 23.77s audio clip. The script will automatically cut or pad the waveform to this length.
+
+It requires a single GPU with 12GB memory.
+
 ## Change Logs
 
 - I remove files unrelated to the feature extraction, making the code that can be easily embedded into your own projects.
