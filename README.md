@@ -2,11 +2,20 @@
 
 This repository contains code is for extracting JukeMIR features in a simplified way on your server.
 
-It generates a (4800, 1) vector for a 23.77s audio clip. The script will automatically cut or pad the waveform to this length.
+It generates a (N, 4800) numpy array for a ~23.77s audio clip, where N depends on the local pooling parameter. The script will automatically cut or pad the waveform to this length.
 
 It requires a single GPU with 12GB memory.
 
 ## Change Logs
+
+### v1.1
+
+- I optimized the parameter settings. Now the model parameters of JukeMIR and the parameters we need to set manually are placed separately.
+- I removed some useless parameters.
+- I added a new parameter `AVERAGE_SLICES` for feature extraction, which allows us to do local average pooling instead of always global pooling.
+- Some other optimizations.
+
+### v1.0
 
 - I remove files unrelated to the feature extraction, making the code that can be easily embedded into your own projects.
 - I provide a guide that you can set up the environment without `docker` (since we usually do not have `sudo` permission in our servers).
@@ -18,7 +27,7 @@ It requires a single GPU with 12GB memory.
 
 ## Installation Guide
 
-### Step 1: Installing JukeMIR
+### Step 1: Installing Jukebox
 
 The simplified JukeMIR package is basically the same as the original version, but I removed the `mpi4py` module, which is for parallel computing. `mpi4py` is difficult to be installed to the environment and has no effect on feature extraction. 
 
@@ -45,20 +54,13 @@ You can move the pretrained models to anywhere you like.
 
 I recommend to precalculate the representations of your data in advance, since it takes really long.
 
-The parameters you may change are in the beginning of `representation.py`:
+The parameters you may change are in `representation.py`:
 
-```
-JUKEBOX_SAMPLE_RATE = 44100
-T = 8192
-SAMPLE_LENGTH = 1048576 # ~23.77s, which is the param in JukeMIR
-DEVICE='cuda'
-VQVAE_MODELPATH = "models/5b/vqvae.pth.tar"
-PRIOR_MODELPATH = "models/5b/prior_level_2.pth.tar"
-INPUT_DIR = r"BUTTER_v2/westone-dataset/WAV/"
-OUTPUT_DIR = r"BUTTER_v2/jukemir/output/"
-os.environ["CUDA_VISIBLE_DEVICES"]="7"
-PRIOR_DEPTH = 36
-```
+- `DEVICE='cuda'`: It determines whether you run the code on the GPU or not.
+- `VQVAE_MODELPATH = "models/5b/vqvae.pth.tar"`, `PRIOR_MODELPATH = "models/5b/prior_level_2.pth.tar"`,`INPUT_DIR = r"BUTTER_v2/westone-dataset/WAV/"`,`OUTPUT_DIR = r"BUTTER_v2/jukemir/output/"`: They specify where your pre-trained model, audio files, and representation outputs are stored.
+-  `AVERAGE_SLICES = 32`: New parameter. Specifies how many chunks the representation of the model output is divided into and averaged. When it is specified as `1`, the code will globally average the output pooling. This parameter must be divisible by `8192`.
+- `USING_CACHED_FILE = False`: New parameter. When it is set to True, the code will check if the output folder already exists for the output file corresponding to the current audio file, and if it does, skip it.
+- `model = "5b"`: Jukebox is available in different sizes, with the default version of JukeMIR being `5b`. Some optional parameters are `5b_lyrics` and `1b`, but neither has been tested.
 
 ### Step 4: Run
 
