@@ -8,6 +8,10 @@ It requires a single GPU with 12GB memory.
 
 ## Change Logs
 
+### v1.11
+
+- I moved the Jukebox model loading code out of the loop, which made the script faster overall.
+
 ### v1.1
 
 - I optimized the parameter settings. Now the model parameters of JukeMIR and the parameters we need to set manually are placed separately.
