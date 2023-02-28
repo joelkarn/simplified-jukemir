@@ -49,7 +49,7 @@ def get_z(audio, vqvae):
     # don't compute unnecessary discrete encodings
     audio = audio[: JUKEBOX_SAMPLE_RATE * 25]
 
-    zs = vqvae.encode(torch.cuda.FloatTensor(audio[np.newaxis, :, np.newaxis]))
+    zs = vqvae.encode(torch.FloatTensor(audio[np.newaxis, :, np.newaxis]).to("mps"))
 
     z = zs[-1].flatten()[np.newaxis, :]
 
@@ -79,7 +79,7 @@ def get_cond(hps, top_prior):
                 ),
             ] * hps.n_samples
 
-    labels = [None, None, top_prior.labeller.get_batch_labels(metas, "cuda")]
+    labels = [None, None, top_prior.labeller.get_batch_labels(metas, "mps")]
 
     x_cond, y_cond, prime = top_prior.get_cond(None, top_prior.get_y(labels[-1], 0))
 
@@ -131,14 +131,22 @@ def get_acts_from_file(fpath, hps, vqvae, top_prior, meanpool):
 
 
 if __name__ == "__main__":
-
     # --- SETTINGS ---
+    if torch.backends.mps.is_available():
+        DEVICE = torch.device("mps")
+    elif torch.cuda.is_available():
+        DEVICE = torch.device("cuda")
+    else:
+        DEVICE = torch.device("cpu")
 
-    DEVICE = 'cuda'
-    VQVAE_MODELPATH = "/import/c4dm-02/jukemir-model/models/5b/vqvae.pth.tar"
-    PRIOR_MODELPATH = "/import/c4dm-02/jukemir-model/models/5b/prior_level_2.pth.tar"
-    INPUT_DIR = r"/homes/yz007/BUTTER_v2/westone-dataset/WAV/"
-    OUTPUT_DIR = r"/homes/yz007/BUTTER_v2/jukemir/output/"
+    print(DEVICE)
+
+    # DEVICE = 'cuda'
+    VQVAE_MODELPATH = "models/vqvae.pth.tar"
+    PRIOR_MODELPATH = "models/prior_level_2.pth.tar"
+    INPUT_DIR = r"mtt_dataset/"
+    OUTPUT_DIR = r"features/"
+    #OUTPUT_DIR = r"features/"
     AVERAGE_SLICES = 32  # For average pooling. "1" means average all frames.
     #  Since the output shape is 8192 * 4800, the params bust can divide 8192.
     USING_CACHED_FILE = False
@@ -147,10 +155,12 @@ if __name__ == "__main__":
     # --- SETTINGS ---
     input_dir = pathlib.Path(INPUT_DIR)
     output_dir = pathlib.Path(OUTPUT_DIR)
+    # input_paths = list(os.walk(input_dir))
     input_paths = sorted(list(input_dir.iterdir()))
+
     # filter
     input_paths = list(filter(lambda x: x.name.endswith('.wav'), input_paths))
-    
+    # print(input_paths)
     device = DEVICE
     # Set up VQVAE
 
@@ -174,7 +184,6 @@ if __name__ == "__main__":
     hps_2["prior_depth"] = DEPTH
     hps_2.restore_prior = PRIOR_MODELPATH
     top_prior = make_prior(hps_2, vqvae, device)
-
     for input_path in tqdm(input_paths):
         # Check if output already exists
         output_path = pathlib.Path(output_dir, f"{input_path.stem}.npy")
