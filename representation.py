@@ -144,10 +144,10 @@ if __name__ == "__main__":
     # DEVICE = 'cuda'
     VQVAE_MODELPATH = "models/vqvae.pth.tar"
     PRIOR_MODELPATH = "models/prior_level_2.pth.tar"
-    INPUT_DIR = r"mtt_dataset/"
+    INPUT_DIR = r"genres/"
     OUTPUT_DIR = r"features/"
     #OUTPUT_DIR = r"features/"
-    AVERAGE_SLICES = 32  # For average pooling. "1" means average all frames.
+    AVERAGE_SLICES = 1  # For average pooling. "1" means average all frames.
     #  Since the output shape is 8192 * 4800, the params bust can divide 8192.
     USING_CACHED_FILE = False
     model = "5b"  # might not fit to other settings, e.g., "1b_lyrics" or "5b_lyrics"
@@ -197,5 +197,8 @@ if __name__ == "__main__":
             representation = get_acts_from_file(
                 input_path, hps, vqvae, top_prior, meanpool=AVERAGE_SLICES
             )
+        # Reshape representation to a 1D array
+        representation = representation.reshape(representation.shape[-1])
 
+        # Save representation
         np.save(output_path, representation)
