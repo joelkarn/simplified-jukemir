@@ -17,7 +17,7 @@ random.shuffle(npy_paths)
 X = np.array([np.load(p) for p in npy_paths])
 y = np.array([os.path.split(p)[1].split('.')[0] for p in npy_paths])
 
-print(X.shape, y)
+print(X.shape, y.shape)
 
 # # Run cross-validation
 # clf = make_pipeline(StandardScaler(), SVC())
