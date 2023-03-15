@@ -5,6 +5,16 @@ This repository Simplified JukeMIR made to work with Apple Silicon GPUs. If you 
 https://github.com/ldzhangyx/simplified-jukemir
 ```
 
+## Usage
+
+### 1. Use JukeMIR to extract features
+
+`python representation.py`
+
+### 2. Train the model for music genre classification
+
+`python music_classification.py`
+
 ## Citation
 
 The Simplified JukeMIR was based on JukeMIR, so if you want to use any of these, please consider citing the original paper:
