@@ -9,11 +9,11 @@ https://github.com/ldzhangyx/simplified-jukemir
 
 ### 1. Use JukeMIR to extract features
 
-`python representation.py`
+`python extract_features.py`
 
-### 2. Train the model for music genre classification
+### 2. Use features to train the model for music genre classification 
 
-`python music_classification.py`
+`python classify_music.py`
 
 ## Citation
 
