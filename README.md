@@ -13,7 +13,7 @@ https://github.com/ldzhangyx/simplified-jukemir
 
 ### 2. Use features to train the model for music genre classification 
 
-`python classify_music.py`
+`python classify_music.py "PATH TO FEATURE DIRECTORY"`
 
 ## Citation
 
