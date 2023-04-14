@@ -12,6 +12,8 @@ import librosa as lr
 import numpy as np
 import torch
 import os
+import argparse
+
 
 # --- MODEL PARAMS ---
 
@@ -131,6 +133,12 @@ def get_acts_from_file(fpath, hps, vqvae, top_prior, meanpool):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Extract features from audio files.")
+
+    parser.add_argument("input_dir", type=str, help="Path to music tagging parent audio directory.")
+    parser.add_argument("output_dir", type=str, help="Path to the output parent directory.")
+    args = parser.parse_args()
+
     # --- SETTINGS ---
     if torch.backends.mps.is_available():
         DEVICE = torch.device("mps")
@@ -144,9 +152,8 @@ if __name__ == "__main__":
     # DEVICE = 'cuda'
     VQVAE_MODELPATH = "models/vqvae.pth.tar"
     PRIOR_MODELPATH = "models/prior_level_2.pth.tar"
-    INPUT_DIR = r"country/"
-    OUTPUT_DIR = r"features/"
-    #OUTPUT_DIR = r"features/"
+    INPUT_DIR = args.input_dir
+    OUTPUT_DIR = args.output_dir
     AVERAGE_SLICES = 1  # For average pooling. "1" means average all frames.
     #  Since the output shape is 8192 * 4800, the params bust can divide 8192.
     USING_CACHED_FILE = False
@@ -155,12 +162,11 @@ if __name__ == "__main__":
     # --- SETTINGS ---
     input_dir = pathlib.Path(INPUT_DIR)
     output_dir = pathlib.Path(OUTPUT_DIR)
-    # input_paths = list(os.walk(input_dir))
-    input_paths = sorted(list(input_dir.iterdir()))
+    input_paths = sorted(list(input_dir.glob("**/*.ogg"))) # only .ogg and .aac files
 
-    # filter
-    input_paths = list(filter(lambda x: x.name.endswith('.wav'), input_paths))
-    # print(input_paths)
+    #input_paths = sorted(list(input_dir.glob("**/*.[oa][ga][gc]"))) # only .ogg and .aac files
+    print(len(input_paths))
+
     device = DEVICE
     # Set up VQVAE
 
@@ -186,7 +192,7 @@ if __name__ == "__main__":
     top_prior = make_prior(hps_2, vqvae, device)
     for input_path in tqdm(input_paths):
         # Check if output already exists
-        output_path = pathlib.Path(output_dir, f"{input_path.stem}.npy")
+        output_path = pathlib.Path(output_dir, input_path.relative_to(input_dir).with_suffix(".npy"))
 
         if os.path.exists(str(output_path)) and USING_CACHED_FILE:  # load cached data, and skip calculating
             np.load(output_path)
@@ -201,4 +207,6 @@ if __name__ == "__main__":
         representation = representation.reshape(representation.shape[-1])
 
         # Save representation
+        output_path.parent.mkdir(parents=True, exist_ok=True)
         np.save(output_path, representation)
+
