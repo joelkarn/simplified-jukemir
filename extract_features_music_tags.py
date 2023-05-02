@@ -134,7 +134,6 @@ def get_acts_from_file(fpath, hps, vqvae, top_prior, meanpool):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Extract features from audio files.")
-
     parser.add_argument("input_dir", type=str, help="Path to music tagging parent audio directory.")
     parser.add_argument("output_dir", type=str, help="Path to the output parent directory.")
     args = parser.parse_args()
@@ -160,73 +159,54 @@ if __name__ == "__main__":
     model = "5b"  # might not fit to other settings, e.g., "1b_lyrics" or "5b_lyrics"
 
     # --- SETTINGS ---
-    input_dir = pathlib.Path(INPUT_DIR)
     output_dir = pathlib.Path(OUTPUT_DIR)
-    input_paths = sorted(list(input_dir.glob("**/*.ogg"))) # only .ogg and .aac files
+    input_dir = pathlib.Path(INPUT_DIR)
 
-    number_of_paths_per_genre = {
-        'PopRock': 0,
-        'Rnb': 0,
-        'Rock': 0,
-        'Soul': 0,
-    }
+    with open('real_definite_paths.txt', 'r') as f:
+        #input_paths = sorted([pathlib.Path(line.strip()) for line in f])
+        input_paths = [pathlib.Path(line.strip()) for line in f]
 
-    for input_path in input_paths:
-        input_path = str(input_path)
-        genre = input_path.split('/')[-2]
-        if genre in number_of_paths_per_genre:
-            number_of_paths_per_genre[genre] += 1
-    print(number_of_paths_per_genre)
-    #     # check if aac_path exists
-    #     if os.path.exists(aac_path):
-    #         print('File exists')
-    #     else:
-    #         print(aac_path)
-    #         number_of_missing_paths += 1
-    # print(number_of_missing_paths)
+    device = DEVICE
+    # Set up VQVAE
 
-    #input_paths = sorted(list(input_dir.glob("**/*.[oa][ga][gc]"))) # only .ogg and .aac files
+    hps = Hyperparams()
+    hps.sr = 44100
+    hps.n_samples = 8
+    hps.name = "samples"
+    chunk_size = 32
+    max_batch_size = 16
+    hps.levels = 3
+    hps.hop_fraction = [0.5, 0.5, 0.125]
+    vqvae, *priors = MODELS[model]
+    hps_1 = setup_hparams(vqvae, dict(sample_length=SAMPLE_LENGTH))
+    hps_1.restore_vqvae = VQVAE_MODELPATH
+    vqvae = make_vqvae(
+        hps_1, device
+    )
 
-    # device = DEVICE
-    # # Set up VQVAE
-    #
-    # hps = Hyperparams()
-    # hps.sr = 44100
-    # hps.n_samples = 8
-    # hps.name = "samples"
-    # chunk_size = 32
-    # max_batch_size = 16
-    # hps.levels = 3
-    # hps.hop_fraction = [0.5, 0.5, 0.125]
-    # vqvae, *priors = MODELS[model]
-    # hps_1 = setup_hparams(vqvae, dict(sample_length=SAMPLE_LENGTH))
-    # hps_1.restore_vqvae = VQVAE_MODELPATH
-    # vqvae = make_vqvae(
-    #     hps_1, device
-    # )
-    #
-    # # Set up language model
-    # hps_2 = setup_hparams(priors[-1], dict())
-    # hps_2["prior_depth"] = DEPTH
-    # hps_2.restore_prior = PRIOR_MODELPATH
-    # top_prior = make_prior(hps_2, vqvae, device)
-    # for input_path in tqdm(input_paths):
-    #     # Check if output already exists
-    #     output_path = pathlib.Path(output_dir, input_path.relative_to(input_dir).with_suffix(".npy"))
-    #
-    #     if os.path.exists(str(output_path)) and USING_CACHED_FILE:  # load cached data, and skip calculating
-    #         np.load(output_path)
-    #         continue
-    #
-    #     # Decode, resample, convert to mono, and normalize audio
-    #     with torch.no_grad():
-    #         representation = get_acts_from_file(
-    #             input_path, hps, vqvae, top_prior, meanpool=AVERAGE_SLICES
-    #         )
-    #     # Reshape representation to a 1D array
-    #     representation = representation.reshape(representation.shape[-1])
-    #
-    #     # Save representation
-    #     output_path.parent.mkdir(parents=True, exist_ok=True)
-    #     np.save(output_path, representation)
+    # Set up language model
+    hps_2 = setup_hparams(priors[-1], dict())
+    hps_2["prior_depth"] = DEPTH
+    hps_2.restore_prior = PRIOR_MODELPATH
+    top_prior = make_prior(hps_2, vqvae, device)
+    for input_path in tqdm(input_paths):
+        # Check if output already exists
+        output_path = pathlib.Path(output_dir, input_path.relative_to(input_dir).with_suffix(".npy"))
+        print(output_path)
+
+        if os.path.exists(str(output_path)):
+            print(str(output_path) + " already exists. Skipping.")
+        else:
+            if not str(input_path) == "data/audio/music_tags/electronic-neither-expressive-neither-neither-technological-neither-modern-neither-youthful/IT0311500117.ogg":
+                # Decode, resample, convert to mono, and normalize audio
+                with torch.no_grad():
+                    representation = get_acts_from_file(
+                        input_path, hps, vqvae, top_prior, meanpool=AVERAGE_SLICES
+                    )
+                # Reshape representation to a 1D array
+                representation = representation.reshape(representation.shape[-1])
+
+                # Save representation
+                output_path.parent.mkdir(parents=True, exist_ok=True)
+                np.save(output_path, representation)
 

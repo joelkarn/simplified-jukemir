@@ -31,16 +31,17 @@ if __name__ == "__main__":
 
     # Run cross-validation with confusion matrix evaluation
     unique, counts = np.unique(y, return_counts=True)
+    n_samples = 500
     min_counts = np.min(counts)
-    print(min_counts)
+    print(counts, unique)
 
     # make new X and y with equal number of samples per class
     new_X = []
     new_y = []
     for label in unique:
         indices = np.where(y == label)[0]
-        new_X.append(X[indices[:min_counts]])
-        new_y.append(y[indices[:min_counts]])
+        new_X.append(X[indices[:n_samples]])
+        new_y.append(y[indices[:n_samples]])
 
     new_X = np.concatenate(new_X)
     new_y = np.concatenate(new_y)
@@ -55,10 +56,13 @@ if __name__ == "__main__":
 
     # Plot confusion matrix with labels
     labels = sorted(set(y))
+    labels.remove('neither')
+    labels.append('neither')
+
     disp = ConfusionMatrixDisplay(confusion_matrix=conf_mat,
                                   display_labels=labels)
     disp.plot()
 
     # Save plot as image file
-    plot_name = 'data/conf_mat/{}/eq_dist_{:.1f}_{:.1f}_cv10.png'.format(args.dimension, np.mean(scores) * 100, np.std(scores) * 100)
+    plot_name = 'data/conf_mat/music_tags/{}_eq_dist_{:.1f}_{:.1f}_cv10.png'.format(args.dimension, np.mean(scores) * 100, np.std(scores) * 100)
     plt.savefig(plot_name)

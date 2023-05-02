@@ -1,4 +1,3 @@
-import numpy as np
 import argparse
 import pathlib
 import random
@@ -6,6 +5,11 @@ import os
 
 
 if __name__ == "__main__":
+    with open('old_new_new_selected_paths.txt', 'r') as f:
+        already_selected = [pathlib.Path(line.strip()) for line in f]
+    print(len(already_selected))
+    neither_dim_5_paths_count = 210
+
     parser = argparse.ArgumentParser(description="Get equal amounts of samples from each tag.")
     parser.add_argument("input_dir", type=str, help="Path to parent directory of raw audio.")
     args = parser.parse_args()
@@ -38,28 +42,20 @@ if __name__ == "__main__":
             tag = tags[p][dim]
             tag_counts[dim][tag] += 1
 
-    # select 500 file paths for each tag in each dimension
-    selected_file_paths = {}
 
     for p in tags:
-        for dim in range(10):
-            tag = tags[p][dim]
-            if tag not in selected_file_paths:
-                selected_file_paths[tag] = []
-            if len(selected_file_paths[tag]) < 500:
-                selected_file_paths[tag].append(p)
+        dim = 5
+        tag = tags[p][dim]
+        if tag == 'technological':
+            "YES"
+            if neither_dim_5_paths_count < 501:
+                if p not in already_selected:
+                    neither_dim_5_paths_count += 1
+                    already_selected.append(p)
 
-    # turn the dictionary into a list
-    selected_file_paths_list = []
-    for tag in selected_file_paths:
-        selected_file_paths_list.extend(selected_file_paths[tag])
-
-    # turn list into only unique paths
-    selected_file_paths_list = list(set(selected_file_paths_list))
-    print(len(selected_file_paths_list))
 
     # save the selected file paths to a text file
-    with open('selected_file_paths.txt', 'w') as f:
-        for path in selected_file_paths_list:
+    with open('new_selected_paths.txt', 'w') as f:
+        for path in already_selected:
             f.write(str(path) + '\n')
 

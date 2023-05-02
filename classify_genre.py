@@ -45,7 +45,7 @@ if __name__ == "__main__":
 
     clf = make_pipeline(StandardScaler(), SVC())
     #clf = make_pipeline(StandardScaler(), RandomForestClassifier())
-    #scores = cross_val_score(clf, new_X, new_y, cv=10)
+    scores = cross_val_score(clf, new_X, new_y, cv=10)
     y_pred = cross_val_predict(clf, new_X, new_y, cv=10)
     conf_mat = confusion_matrix(new_y, y_pred)
 
@@ -54,16 +54,16 @@ if __name__ == "__main__":
 
     # Plot confusion matrix with labels
     labels = sorted(set(y))
-    from sklearn.metrics import classification_report
-    report = classification_report(new_y, y_pred, target_names=labels)
-    print(report)
-    with open('data/classification_reports/genres/classification_report.txt', 'w') as file:
-        file.write(report)
+    # from sklearn.metrics import classification_report
+    # report = classification_report(new_y, y_pred, target_names=labels)
+    # print(report)
+    # with open('data/classification_reports/genres/classification_report.txt', 'w') as file:
+    #     file.write(report)
 
-    # disp = ConfusionMatrixDisplay(confusion_matrix=conf_mat,
-    #                               display_labels=labels)
-    # disp.plot()
-    #
-    # # Save plot as image file
-    # plot_name = 'data/conf_mat/genres/{:.2f}_cv10.png'.format(weighted_f1_score)
-    # plt.savefig(plot_name)
+    disp = ConfusionMatrixDisplay(confusion_matrix=conf_mat,
+                                  display_labels=labels)
+    disp.plot()
+
+    # Save plot as image file
+    plot_name = 'data/conf_mat/genres/{:.2f}_{:.2f}_cv10.png'.format(np.mean(scores) * 100, np.std(scores) * 100)
+    plt.savefig(plot_name)
