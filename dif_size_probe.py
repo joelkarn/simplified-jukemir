@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torch.utils.data import TensorDataset, DataLoader
 import sklearn.metrics as metrics
 import numpy as np
 import argparse
@@ -10,6 +11,7 @@ import random
 from sklearn.model_selection import StratifiedKFold
 import matplotlib.pyplot as plt
 import seaborn as sns
+import json
 
 class Net(nn.Module):
     def __init__(self, input_dim):
@@ -25,14 +27,6 @@ class Net(nn.Module):
         x = self.sigmoid(x)
         x = self.fc3(x)
         return x
-
-def train_model(config):
-    args.learning_rate = config["learning_rate"]
-    args.dropout_prob = config["dropout_prob"]
-    args.weight_decay = config["weight_decay"]
-
-    input_dim = X.shape[1]
-
 
 
 if __name__ == "__main__":
@@ -72,13 +66,19 @@ if __name__ == "__main__":
 
     # make new X and y with equal number of samples per class
     unique, counts = np.unique(y, return_counts=True)
-    data_sizes = list(range(100, counts.min(), 200))
+    data_sizes = [50, 60 , 70, 80, 90, 100, 150, 200, 250, 300, 400, 600, 700, 800, 900, 1000, 1100, 1200, 1300, int(min(counts))]
+    #data_sizes = list(range(50, counts.min(), 50))
     f1_scores = [0]*len(data_sizes)
     i = 0
     model_file = f"best_model.pth"
+    #
+    # print("Number of samples per class:")
+    # for label, count in zip(unique, counts):
+    #     print(f"{label}: {count}")
 
     for n_samples in data_sizes:
-        random.seed(i)
+
+        random.seed(i + 100)
         new_X = []
         new_y = []
         for label in unique:
@@ -106,6 +106,22 @@ if __name__ == "__main__":
             X_train, X_val = new_X[train_index], new_X[val_index]
             y_train, y_val = new_y[train_index], new_y[val_index]
 
+            # Convert numpy arrays to PyTorch tensors
+            X_train_tensor = torch.from_numpy(X_train).float()
+            y_train_tensor = torch.from_numpy(y_train.astype(np.float32)).unsqueeze(1)
+            X_val_tensor = torch.from_numpy(X_val).float()
+            y_val_tensor = torch.from_numpy(y_val.astype(np.float32)).unsqueeze(1)
+
+            # Define datasets
+            train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
+            val_dataset = TensorDataset(X_val_tensor, y_val_tensor)
+
+            # Define data loaders
+            min_batch_size = 64
+            batch_size = min(min_batch_size, len(train_dataset))
+            train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+            val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+
             # train model
             net = Net(input_dim)
             criterion = nn.BCEWithLogitsLoss()
@@ -116,11 +132,12 @@ if __name__ == "__main__":
             wait = 0
 
             for epoch in range(int(args.epochs)):
-                optimizer.zero_grad()
-                output = net(torch.from_numpy(X_train).float())
-                loss = criterion(output, torch.from_numpy(y_train.astype(np.float32)).unsqueeze(1))
-                loss.backward()
-                optimizer.step()
+                for X_batch, y_batch in train_loader:
+                    optimizer.zero_grad()
+                    output = net(X_batch)
+                    loss = criterion(output, y_batch)
+                    loss.backward()
+                    optimizer.step()
 
                 if epoch % 10 == 0:
 
@@ -151,11 +168,26 @@ if __name__ == "__main__":
         print(f'f1 score: {f1_scores[i]}')
 
         i += 1
+    input_str = str(input_dir)
+    name_of_model = input_str.split('/')[1].replace('_features', '')
 
-    print(f1_scores)
+    data_to_save = {'data_sizes': data_sizes, 'f1_scores': f1_scores, 'model': name_of_model}
+    # save data, check if there is a run_0 file already, if so, save as run_1, etc.
+    i = 0
+    while os.path.exists(f"data/datasizes/run_{i}.json"):
+        i += 1
+    with open(f"data/datasizes/run_{i}.json", 'w') as f:
+        json.dump(data_to_save, f)
+
     sns.lineplot(x=data_sizes, y=f1_scores, label="f1 score")
     plt.legend()
     plt.show()
 
-# choi
-# python dif_size_probe.py data/choi_features/music_tags 0 --learning_rate 0.004995732273615719 --weight_decay 0.001268951728049984 --early_stopping --dropout_prob 0.4059396056893086
+# # choi
+# # python dif_size_probe.py data/choi_features/music_tags 0 --learning_rate 0.004995732273615719 --weight_decay 0.001268951728049984 --early_stopping --dropout_prob 0.4059396056893086
+#
+# # l3net
+# # python dif_size_probe.py data/l3net_features/music_tags 0 --learning_rate 0.0009615673995981056 --weight_decay 0.051582663771638546 --early_stopping --dropout_prob 0.3389827761755996
+#
+# # jukebox
+# # python dif_size_probe.py data/jukebox_features/music_tags 0 --learning_rate 0.0080705879972147 --weight_decay 0.014420622945033037 --early_stopping --dropout_prob 0.2848565484101526

@@ -27,14 +27,6 @@ class Net(nn.Module):
         x = self.fc3(x)
         return x
 
-def train_model(config):
-    args.learning_rate = config["learning_rate"]
-    args.dropout_prob = config["dropout_prob"]
-    args.weight_decay = config["weight_decay"]
-
-    input_dim = X.shape[1]
-
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Extract features from audio files.")

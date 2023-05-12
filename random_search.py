@@ -11,6 +11,7 @@ from sklearn.model_selection import StratifiedKFold
 import ray
 from ray import tune
 
+
 class Net(nn.Module):
     def __init__(self, input_dim, dropout_prob):
         super(Net, self).__init__()
@@ -25,6 +26,7 @@ class Net(nn.Module):
         x = self.sigmoid(x)
         x = self.fc3(x)
         return x
+
 
 def load_data(input_dir, dimension):
     npy_paths = sorted(list(input_dir.glob("**/*.npy")))
@@ -70,6 +72,7 @@ def load_data(input_dir, dimension):
     X_norm = (new_X - X_mean) / X_std
 
     return X_norm, new_y
+
 
 def train_model(config, X, y):
     learning_rate = config["learning_rate"]
@@ -124,6 +127,7 @@ def train_model(config, X, y):
     average_val_loss = np.mean(best_val_losses)
     # Report the final validation error to Ray Tune
     tune.report(final_val_error=average_val_loss)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Extract features from audio files.")
