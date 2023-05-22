@@ -152,7 +152,7 @@ if __name__ == "__main__":
         lambda cfg: train_model(cfg, X, y),
         config=search_space,
         num_samples=20,  # Number of hyperparameter configurations to try
-        resources_per_trial={"cpu": 1},  # CPU resources to allocate per trial
+        resources_per_trial={"cpu": 2},  # CPU resources to allocate per trial
         local_dir="data",  # Directory to store Ray Tune results
     )
 

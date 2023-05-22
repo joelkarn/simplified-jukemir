@@ -33,8 +33,8 @@ sns.lineplot(x='data_sizes',
              hue='model',
              data=df)
 #only plot x values that are in the range of 100-1400
-plt.xlim(100, 1400)
-plt.ylim(0.6, 1)
+#plt.xlim(100, 1400)
+#plt.ylim(0.6, 1)
 plt.title(r'F1 score for different data sizes')
 plt.xlabel(r'Data size')
 plt.ylabel(r'F1 score')

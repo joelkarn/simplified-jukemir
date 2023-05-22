@@ -3,13 +3,14 @@ from ray import tune
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torch.utils.data import TensorDataset, DataLoader
 import torch.optim.lr_scheduler as lr_scheduler
 import numpy as np
 import argparse
 import pathlib
 import os
 import random
-from sklearn.model_selection import KFold
+from sklearn.model_selection import StratifiedKFold
 import matplotlib.pyplot as plt
 
 class Net(nn.Module):
@@ -34,7 +35,7 @@ if __name__ == "__main__":
     parser.add_argument("input_dir", type=str, help="Path to feature parent directory.")
     parser.add_argument("dimension", type=str, help="Which dimension (0-9) to investigate.")
 
-    parser.add_argument("--epochs", type=float, default=1000, help="Number of epochs to train for.")
+    parser.add_argument("--epochs", type=float, default=10000, help="Number of epochs to train for.")
     parser.add_argument("--learning_rate", type=float, default=0.01, help="Learning rate for the optimizer.")
     parser.add_argument("--step_size", type=float, default=100, help="Step size for the scheduler.")
     parser.add_argument("--gamma", type=float, default=1, help="Gamma for the scheduler.")
@@ -74,36 +75,52 @@ if __name__ == "__main__":
     new_X = np.concatenate(new_X)
     new_y = np.concatenate(new_y)
 
-    # shuffle data
+    # Shuffle data
     indices = np.arange(len(new_X))
     np.random.shuffle(indices)
     new_X = new_X[indices]
     new_y = new_y[indices]
-    # there are two classes, so make labels 0 and 1
+
+    # Turn classes into 0 and 1
     new_y = np.array([0 if label == unique[0] else 1 for label in new_y])
 
     # Normalize the data
     X_mean = np.mean(new_X, axis=0)
     X_std = np.std(new_X, axis=0)
-
-    # Normalize the data
     X_norm = (new_X - X_mean) / X_std
 
     # Add these lines before the training loop
-    n_splits = 5
-    kf = KFold(n_splits=n_splits)
+    n_splits = 10
+    skf = StratifiedKFold(n_splits=n_splits)
 
     # For storing average performance across all folds
     all_train_errors = []
     all_val_errors = []
     best_val_losses = []
+    model_file = f"best_model.pth"
 
-    # Implement k-fold cross-validation
-    for fold, (train_index, val_index) in enumerate(kf.split(X_norm)):
+    # Implement sk-fold cross-validation
+    for fold, (train_index, val_index) in enumerate(skf.split(X_norm, new_y)):
         print(f"Fold {fold + 1}")
 
         X_train, X_val = X_norm[train_index], X_norm[val_index]
         y_train, y_val = new_y[train_index], new_y[val_index]
+
+        # Convert numpy arrays to PyTorch tensors
+        X_train_tensor = torch.from_numpy(X_train).float()
+        y_train_tensor = torch.from_numpy(y_train.astype(np.float32)).unsqueeze(1)
+        X_val_tensor = torch.from_numpy(X_val).float()
+        y_val_tensor = torch.from_numpy(y_val.astype(np.float32)).unsqueeze(1)
+
+        # Define datasets
+        train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
+        val_dataset = TensorDataset(X_val_tensor, y_val_tensor)
+
+        # Define data loaders
+        min_batch_size = 64
+        batch_size = min(min_batch_size, len(train_dataset))
+        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+        val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 
         # train model
         net = Net(input_dim)
@@ -111,10 +128,9 @@ if __name__ == "__main__":
         optimizer = optim.Adam(net.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
         scheduler = lr_scheduler.StepLR(optimizer, step_size=args.step_size, gamma=args.gamma)
 
-        patience = 100
+        patience = 50
         best_val_loss = float("inf")
         wait = 0
-        model_file = f"best_model_fold_{fold + 1}.pth"
 
         train_errors = []
         val_errors = []

@@ -44,9 +44,11 @@ if __name__ == "__main__":
     for p in tags:
         for dim in range(10):
             tag = tags[p][dim]
+            if tag == 'neither': # skip neither tags
+                continue
             if tag not in selected_file_paths:
                 selected_file_paths[tag] = []
-            if len(selected_file_paths[tag]) < 500:
+            if len(selected_file_paths[tag]) < 1201:
                 selected_file_paths[tag].append(p)
 
     # turn the dictionary into a list
@@ -59,7 +61,7 @@ if __name__ == "__main__":
     print(len(selected_file_paths_list))
 
     # save the selected file paths to a text file
-    with open('selected_file_paths.txt', 'w') as f:
+    with open('test_paths.txt', 'w') as f:
         for path in selected_file_paths_list:
             f.write(str(path) + '\n')
 

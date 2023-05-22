@@ -162,7 +162,8 @@ if __name__ == "__main__":
     output_dir = pathlib.Path(OUTPUT_DIR)
     input_dir = pathlib.Path(INPUT_DIR)
 
-    with open('real_definite_paths.txt', 'r') as f:
+    #with open('real_definite_paths.txt', 'r') as f:
+    with open('test_paths.txt', 'r') as f:
         #input_paths = sorted([pathlib.Path(line.strip()) for line in f])
         input_paths = [pathlib.Path(line.strip()) for line in f]
 

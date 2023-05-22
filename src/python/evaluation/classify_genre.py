@@ -3,7 +3,7 @@ import argparse
 import pathlib
 import random
 import os
-
+import seaborn as sns
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
 from sklearn.model_selection import cross_val_score, cross_val_predict
@@ -19,7 +19,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     input_dir = pathlib.Path(args.input_dir)
-
+    print("HEJSAN!!!!!")
     npy_paths = sorted(list(input_dir.glob("**/*.npy")))
     random.seed(0)
     random.shuffle(npy_paths)
@@ -45,7 +45,7 @@ if __name__ == "__main__":
 
     clf = make_pipeline(StandardScaler(), SVC())
     #clf = make_pipeline(StandardScaler(), RandomForestClassifier())
-    scores = cross_val_score(clf, new_X, new_y, cv=10)
+    scores = cross_val_score(clf, new_X, new_y, cv=10, scoring='f1_macro')
     y_pred = cross_val_predict(clf, new_X, new_y, cv=10)
     conf_mat = confusion_matrix(new_y, y_pred)
 
@@ -60,10 +60,32 @@ if __name__ == "__main__":
     # with open('data/classification_reports/genres/classification_report.txt', 'w') as file:
     #     file.write(report)
 
-    disp = ConfusionMatrixDisplay(confusion_matrix=conf_mat,
-                                  display_labels=labels)
-    disp.plot()
+    # disp = ConfusionMatrixDisplay(confusion_matrix=conf_mat, display_labels=labels)
+    # disp.plot()
+    # Use Seaborn's heatmap function to plot the confusion matrix
+    plt.figure(figsize=(10, 7))  # Adjust the figure size as needed
+    sns.set(font_scale=1.2)  # Adjust the font scale as needed
 
-    # Save plot as image file
-    plot_name = 'data/conf_mat/genres/{:.2f}_{:.2f}_cv10.png'.format(np.mean(scores) * 100, np.std(scores) * 100)
+    if "bert" in input_dir.name:
+        color = "Greys"
+    if "openai" in input_dir.name:
+        color = "Reds"
+    if "choi" in input_dir.name:
+        color = "Oranges"
+    if "l3net" in input_dir.name:
+        color = "Greens"
+    if "juke" in input_dir.name:
+        color = "Blues"
+    if "openai_combined" in input_dir.name:
+        color = "Purples"
+
+
+    sns.heatmap(conf_mat, annot=True, fmt="d", cmap=color, xticklabels=labels, yticklabels=labels)
+
+    # Set labels for x and y axis
+    plt.xlabel("Predicted")
+    plt.ylabel("True")
+
+    # Save plot as PDF file
+    plot_name = 'data/conf_mat/genres/{:.2f}_{:.2f}_cv10.pdf'.format(np.mean(scores) * 100, np.std(scores) * 100)
     plt.savefig(plot_name)
